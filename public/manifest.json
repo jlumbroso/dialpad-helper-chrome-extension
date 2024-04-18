@@ -1,8 +1,9 @@
 {
   "manifest_version": 3,
-  "name": "Chrome Extension React/TypeScript Starter",
+  "name": "Dialpad Helper",
   "version": "1.0",
-  "description": "Template for a Chrome Extension using React/TypeScript and built with WebPack",
+  "description": "Enhance interaction with Dialpad by automating specific actions and extracting call information.",
+  "permissions": ["storage", "activeTab", "contextMenus", "scripting", "clipboardRead"],
   "icons": {
     "16": "images/favicon-16x16.png",
     "32": "images/favicon-32x32.png",
@@ -11,11 +12,16 @@
     "512": "images/android-chrome-512x512.png"
   },
   "offline_enabled": true,
-  "permissions": ["storage", "activeTab", "contextMenus"],
   "background": {
     "service_worker": "background.js"
   },
   "action": {
     "default_popup": "index.html"
-  }
+  },
+  "content_scripts": [
+    {
+        "js": ["dialpadCallParser.js"],
+        "matches": ["<all_urls>"]
+    }
+  ]
 }
