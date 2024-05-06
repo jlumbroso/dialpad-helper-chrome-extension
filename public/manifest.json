@@ -3,7 +3,7 @@
   "name": "Dialpad Helper",
   "version": "1.0",
   "description": "Enhance interaction with Dialpad by automating specific actions and extracting call information.",
-  "permissions": ["storage", "activeTab", "contextMenus", "scripting", "clipboardRead"],
+  "permissions": ["storage", "activeTab", "tabs", "contextMenus", "scripting", "clipboardRead"],
   "icons": {
     "16": "images/favicon-16x16.png",
     "32": "images/favicon-32x32.png",
@@ -21,7 +21,7 @@
   "content_scripts": [
     {
         "js": ["dialpadCallParser.js"],
-        "matches": ["<all_urls>"]
+        "matches": ["https://dialpad.com/*"]
     }
   ]
 }

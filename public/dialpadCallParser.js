@@ -1,3 +1,22 @@
+// Send a message to the background script to add an element
+function addElementToStorage(id, data) {
+  chrome.runtime.sendMessage({ type: 'addElement', id, data }, (response) => {
+    if (response.success) {
+      console.log('Element added successfully.');
+    }
+  });
+}
+
+// Send a message to the background script to update an element
+function updateElementInStorage(id, data) {
+  chrome.runtime.sendMessage({ type: 'updateElement', id, data }, (response) => {
+    if (response.success) {
+      console.log('Element updated successfully.');
+    }
+  });
+}
+
+
 function waitForElement(selector) {
     return new Promise((resolve) => {
         const interval = setInterval(() => {
@@ -82,11 +101,11 @@ function scrapeParsedDate() {
 
 function getCallId() {
     const tabUrl = window.location.href;
-    const urlPattern = /^https:\/\/dialpad\.com\/callhistory\/callreview\/(\d+)\?$/;
+    const urlPattern = /^https:\/\/dialpad\.com\/callhistory\/callreview\/(\d+)[^\d]?$/;
     const match = tabUrl.match(urlPattern);
 
     if (!match) {
-        console.error('Error: Not on a valid Dialpad call review URL.');
+        console.error('Error: Not on a valid Dialpad call review URL.', tabUrl, match);
         return;
     }
 
@@ -107,8 +126,34 @@ async function handleButtonClicks() {
     }
 }
 
+async function focusTabAndWindow() {
+    try {
+      const tabs = await new Promise((resolve) => {
+        chrome.tabs.query({ active: true, currentWindow: true }, resolve);
+      });
+  
+      if (tabs.length > 0) {
+        const activeTab = tabs[0];
+  
+        await new Promise((resolve) => {
+          chrome.windows.update(activeTab.windowId, { focused: true }, resolve);
+        });
+  
+        await new Promise((resolve) => {
+          chrome.tabs.update(activeTab.id, { active: true }, resolve);
+        });
+      }
+    } catch (error) {
+      console.error('Error focusing tab and window:', error);
+    }
+  }
+
+let currentCallID = null;
+
 async function collectCallInformation() {
     window.focus();
+    // Call the blocking function
+    focusTabAndWindow();
     
     // Trigger the URL generation of the call to the clipboard
     await handleButtonClicks();
@@ -118,6 +163,7 @@ async function collectCallInformation() {
     if (!callId) {
         return;
     }
+    currentCallID = callId;
     
     // Scrape the caller name
     const callerName = scrapeCallerName();
@@ -133,10 +179,12 @@ async function collectCallInformation() {
         "id": callId,
         "name": callerName,
         "timestamp": callerTimestamp,
-        "url": callURL
+        "url": typeof callURL === 'string' ? callURL : null
     };
 
     console.log(callerRecord);
+    //chrome.runtime.sendMessage({ type: 'updateCallInfo', data: callerRecord});
+    addElementToStorage(callId, callerRecord);
 
     return callerRecord;
 }
@@ -152,4 +200,47 @@ chrome.runtime.onMessage.addListener(function(request, sender, sendResponse) {
       return true;  // indicate async response
     }
   });
+
+
+// Clipboard monitoring
+
+let previousClipboardContent = '';
+
+// Function to check clipboard content periodically
+function checkClipboardContent() {
+  navigator.clipboard.readText().then((clipboardContent) => {
+    if (clipboardContent !== previousClipboardContent) {
+      previousClipboardContent = clipboardContent;
+      sendClipboardChangeMessage(clipboardContent);
+    }
+  });
+}
+
+// Function to send a message to the background worker
+function sendClipboardChangeMessage(content) {
+    // check if content starts by https://
+    if (content.startsWith('https://')) {
+        let callId = currentCallID;
+        console.log('Sending clipboard change message:', content);
+        if (!callId) {
+            console.log('No current call ID found, attempting to fetch...');
+            callId = getCallId();
+        }
+        if (!callId) {
+            console.error('No call ID found, cannot send clipboard change message.');
+            return;
+        }
+        console.log('Updating call (', callId, ') URL with clipboard content:', content);
+        updateElementInStorage(callId, { "url": content });
+    }
+  chrome.runtime.sendMessage({ type: 'clipboardChange', content: content});
+}
+
+// Listen for copy, cut, and paste events
+document.addEventListener('copy', checkClipboardContent);
+document.addEventListener('cut', checkClipboardContent);
+document.addEventListener('paste', checkClipboardContent);
+
+// Check clipboard content every 1 second
+setInterval(checkClipboardContent, 1000);
   

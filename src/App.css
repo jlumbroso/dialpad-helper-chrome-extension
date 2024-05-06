@@ -1,10 +1,61 @@
 .App {
     color: black;
-    text-align: center;
+    text-align: left;
 }
 
 .container {
   width: 400px;
   padding: 1rem;
   background-color: white;
+}
+
+.call-item {
+  display: flex;
+  align-items: center;
+  margin-bottom: 10px;
+}
+
+.call-name {
+  font-weight: bold;
+  margin-right: 10px;
+}
+
+.call-date,
+.call-time,
+.call-duration {
+  margin-right: 10px;
+}
+
+.call-actions {
+  display: flex;
+  align-items: center;
+  margin-left: auto;
+}
+
+.download-button {
+  background: none;
+  border: none;
+  cursor: pointer;
+  font-size: 16px;
+  padding: 0;
+  margin-right: 5px;
+}
+
+.download-button:hover {
+  opacity: 0.8;
+}
+
+.download-button.disabled {
+  opacity: 0.5;
+  cursor: not-allowed;
+}
+
+.call-actions a {
+  font-size: 16px;
+  text-decoration: none;
+  color: inherit;
+}
+
+.call-actions a:hover {
+  opacity: 0.8;
 }
