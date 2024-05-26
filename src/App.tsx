@@ -70,7 +70,7 @@ function App() {
 
   return (
     <div className="App">
-      <h1>Starter Extension</h1>
+      <h1>Dialpad Call Downloader</h1>
       <button onClick={fetchCallInfo}>Fetch Call Information</button>
       {callDict
         .sort((a, b) => new Date(a.timestamp.start_datetime) - new Date(b.timestamp.start_datetime))
